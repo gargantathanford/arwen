@@ -1,7 +1,8 @@
 # Development stages
 
-Only Stage 0 is included in this repository. Later stages describe proposed work
-and its acceptance criteria.
+Stage 0 and the first Stage 1 local-position contracts are implemented. Stage 1
+is a bounded initial slice; additional mission-required fields and contracts
+remain to be defined. Later stages describe proposed work and acceptance criteria.
 
 | Stage | Scope | Completion evidence |
 | --- | --- | --- |

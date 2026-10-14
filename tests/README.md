@@ -1,8 +1,9 @@
 # Test strategy
 
-This directory is intentionally free of Python tests at the structure-only
-stage. There is no behavior to validate yet. Pytest is configured for this
-directory, and a run currently exits with code 5 because it collects no tests.
+`test_contracts.py` exercises initial Stage 1 contracts with a deterministic fake
+adapter. It covers validation, freshness, frame agreement, request expiry,
+authority revocation, unsupported capabilities, replay rejection and submission
+without implied physical movement. No simulator or hardware is accessed.
 
 Add tests alongside the first implemented behavior. Annotate test functions and
 fixtures. Import the installed `arwen` package, never code through a modified

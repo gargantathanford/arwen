@@ -5,10 +5,12 @@ mission behavior, perception, control requests, and safety policy to different
 flight controllers and vehicle configurations. PX4 and ArduPilot are initial
 integration targets; neither defines the core application model.
 
-This repository currently contains the initial package structure, development
-configuration, and architectural decisions. The package has no runtime behavior,
-flight logic, MAVLink implementation, hardware access, or application entry point.
-It is an early platform scaffold, not a flight-ready system.
+This repository contains the platform scaffold and initial Stage 1 contracts:
+local NED positions, timestamped vehicle state, explicit capabilities, expiring
+position requests, submission results, an adapter protocol, and timing
+configuration. A deterministic test fake exercises the boundary without I/O.
+There is no flight logic, MAVLink implementation, hardware access, or application
+entry point. This is not a flight-ready system.
 
 ## System responsibilities
 
@@ -45,7 +47,8 @@ The import package is `arwen`; its distribution name is `arwen-autonomy`.
 | `tests/` | Future behavior, contract, and integration tests. |
 | `docs/` | Architecture, decision records, and development stages. |
 
-Each Python package currently contains only a descriptive `__init__.py`. A
+Contracts are defined in `arwen.vehicle.contracts` and timing configuration in
+`arwen.config.models`. Package initializers remain free of eager imports. A
 `py.typed` marker identifies the package as providing inline typing. Data models
 and interfaces will be added when their first concrete contracts are defined.
 
@@ -85,9 +88,11 @@ python -m mypy
 python -m build
 ```
 
-There are deliberately no behavior tests yet. `python -m pytest` currently
-reports no collected tests and exits with code 5. Add tests with the first
-implemented behavior; do not add empty tests to manufacture a passing suite.
+Run the deterministic Stage 1 behavior and fake-adapter tests:
+
+```bash
+python -m pytest
+```
 
 The core has no runtime dependencies. Tooling is installed through the `dev`
 extra. No simulator, flight-controller checkout, or camera library is needed to
@@ -104,3 +109,6 @@ install or import this scaffold.
 The next stage is to define typed vehicle state, capability, command-result, and
 configuration contracts and test them using fake adapters. Protocol integration
 and flight behavior follow those contracts.
+
+See [ADR 0002](docs/decisions/0002-position-contracts.md) for the first contract
+semantics and remaining integration decisions.

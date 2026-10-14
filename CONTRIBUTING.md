@@ -12,7 +12,7 @@ empty classes, placeholder functions, speculative methods, catch-all `utils`
 modules, and interfaces with no defined consumer. Record cross-module decisions
 in `docs/decisions/` before introducing a new architectural dependency.
 
-The current stage is structure only. Future changes must have their own scope
+The current stage includes initial typed contracts and deterministic tests. Future changes must have their own scope
 and acceptance criteria.
 
 ## Python and typing
@@ -79,8 +79,8 @@ python -m mypy
 python -m build
 ```
 
-Run `python -m pytest` once behavior tests exist. For this scaffold, code 5 means
-there are no tests; it is not evidence that runtime behavior has been tested.
+Run `python -m pytest` for the Stage 1 behavior tests. A zero-test run is not
+evidence that behavior has been tested.
 See [tests/README.md](tests/README.md) for future testing categories.
 
 For functional changes, add tests for externally meaningful behavior and

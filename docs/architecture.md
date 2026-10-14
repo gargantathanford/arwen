@@ -1,7 +1,8 @@
 # Architecture
 
-Status: initial boundary design. The responsibilities below are design intent;
-there are no implemented interfaces, command paths, or safety mechanisms yet.
+Status: initial boundary design with Stage 1 local-position contracts and an
+adapter protocol implemented. The broader responsibilities below remain design
+intent; there are no production command paths or safety mechanisms yet.
 
 ## Control-system separation
 
