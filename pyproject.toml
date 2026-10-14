@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools>=77.0.3"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "arwen-autonomy"
+version = "0.1.0.dev0"
+description = "Reusable UAV autonomy middleware with independent vehicle and mission boundaries."
+readme = "README.md"
+requires-python = ">=3.12"
+keywords = ["uav", "autonomy", "robotics", "middleware"]
+classifiers = [
+    "Development Status :: 1 - Planning",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.12",
+    "Typing :: Typed",
+]
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "build>=1.2.2,<2",
+    "mypy>=1.15,<3",
+    "pytest>=8.3,<10",
+    "ruff>=0.11,<1",
+]
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["arwen", "arwen.*"]
+namespaces = false
+
+[tool.setuptools.package-data]
+arwen = ["py.typed"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+src = ["src"]
+
+[tool.ruff.lint]
+select = ["ANN", "B", "E4", "E7", "E9", "F", "I", "UP"]
+
+[tool.mypy]
+python_version = "3.12"
+files = ["src/arwen"]
+strict = true
+warn_unreachable = true
+warn_unused_configs = true
+show_error_codes = true
+pretty = true
+
+[tool.pytest.ini_options]
+minversion = "8.3"
+testpaths = ["tests"]
+addopts = "--import-mode=importlib --strict-config --strict-markers -ra"

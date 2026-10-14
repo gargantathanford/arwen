@@ -1,0 +1,36 @@
+# Python bytecode and tool caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# Environments and packaging outputs
+.venv/
+venv/
+.tox/
+.nox/
+build/
+dist/
+*.egg-info/
+
+# Local settings and secrets
+.env
+.env.*
+!.env.example
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Generated runtime data
+*.log
+/artifacts/
+/recordings/
+/model_cache/
