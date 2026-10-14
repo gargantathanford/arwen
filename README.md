@@ -5,12 +5,11 @@ mission behavior, perception, control requests, and safety policy to different
 flight controllers and vehicle configurations. PX4 and ArduPilot are initial
 integration targets; neither defines the core application model.
 
-This repository contains the platform scaffold and initial Stage 1 contracts:
-local NED positions, timestamped vehicle state, explicit capabilities, expiring
-position requests, submission results, an adapter protocol, and timing
-configuration. A deterministic test fake exercises the boundary without I/O.
-There is no flight logic, MAVLink implementation, hardware access, or application
-entry point. This is not a flight-ready system.
+Stages 1 and 2 now provide typed firmware-neutral contracts and a passive PX4
+UDP telemetry adapter. The terminal monitor observes heartbeat health and local
+NED position with explicit timing quality. Every vehicle request is rejected as
+unsupported. There is no active flight logic, mission execution or command
+authority implementation. This is not a flight-ready system.
 
 ## System responsibilities
 
@@ -106,9 +105,21 @@ install or import this scaffold.
 - [Development roadmap](docs/development-roadmap.md)
 - [Test strategy](tests/README.md)
 
-The next stage is to define typed vehicle state, capability, command-result, and
-configuration contracts and test them using fake adapters. Protocol integration
-and flight behavior follow those contracts.
+The next stage is **safety and authority before active control**. Live PX4 SITL
+has not been exercised in this cloud environment.
+
+## Passive PX4 monitor
+
+```bash
+python -m pip install -e '.[mavlink]'
+python -m arwen.applications.telemetry --bind-host 127.0.0.1 --bind-port 14540 \
+  --system-id 1 --component-id 1
+```
+
+See the [PX4 SITL guide](docs/px4-sitl.md) for installation, VM networking,
+QGroundControl concurrency, timing/frame limitations and the opt-in live smoke
+procedure. See [ADR 0003](docs/decisions/0003-passive-px4.md) for lifecycle and
+TIMESYNC-only transmission policy. Core installation does not require pymavlink.
 
 See [ADR 0002](docs/decisions/0002-position-contracts.md) for the first contract
 semantics and remaining integration decisions.

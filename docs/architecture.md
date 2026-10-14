@@ -1,8 +1,10 @@
 # Architecture
 
-Status: initial boundary design with Stage 1 local-position contracts and an
-adapter protocol implemented. The broader responsibilities below remain design
-intent; there are no production command paths or safety mechanisms yet.
+Status: Stage 1 contracts and Stage 2 passive PX4 UDP monitoring implemented.
+Communication owns explicit transport lifecycle, MAVLink decoding and PX4
+normalization; applications owns the synchronous terminal monitor. No production
+command path or safety/authority mechanism is implemented. See ADR 0003 for
+clock uncertainty and estimator-session limitations.
 
 ## Control-system separation
 
@@ -103,8 +105,8 @@ perception and control requirements.
 The `src/` layout separates importable code from repository tooling and
 documentation. Setuptools discovers only `arwen` and its subpackages; the
 `py.typed` marker is included in the wheel. Keep `__init__.py` files small and
-free of eager imports. There are no runtime dependencies or application entry
-points at this stage.
+free of eager imports. The core has no runtime dependencies. The optional `mavlink` extra supplies
+pymavlink for the explicitly started terminal telemetry monitor.
 
 ## References
 

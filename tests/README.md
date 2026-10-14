@@ -22,3 +22,10 @@ them. Hardware and simulator tests must become explicit opt-in activities; the
 default test suite must not connect to a vehicle. Tests must describe behavior
 and meaningful failure cases, not merely repeat an implementation or check that
 a placeholder exists.
+
+Stage 2 tests use fake transport and injected clocks (`test_px4.py`), plus real
+MAVLink encoding and loopback UDP (`test_mavlink.py`). Install `.[dev,mavlink]`
+to run wire tests; with core tooling alone the two optional wire tests skip.
+No default test uses aircraft, simulators, public networks or timing sleeps.
+Installed-wheel checks verify imports without pymavlink and the diagnostic for a
+missing extra. Live SITL is opt-in and has not been run; see docs/px4-sitl.md.

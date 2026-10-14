@@ -1,8 +1,8 @@
 # Development stages
 
-Stage 0 and the first Stage 1 local-position contracts are implemented. Stage 1
-is a bounded initial slice; additional mission-required fields and contracts
-remain to be defined. Later stages describe proposed work and acceptance criteria.
+Stages 0 and 1 plus the Stage 2 passive PX4 implementation are present. Stage 2
+has deterministic and local wire/UDP validation; live simulator acceptance is
+still pending. Later stages describe proposed work and acceptance criteria.
 
 | Stage | Scope | Completion evidence |
 | --- | --- | --- |
@@ -14,18 +14,9 @@ remain to be defined. Later stages describe proposed work and acceptance criteri
 | 5: Perception and missions | Concrete observations and mission policies using the existing contracts. | Deterministic mission scenarios use recorded or synthetic observations; policies do not import firmware-specific code. |
 | 6: Platform hardening | A second firmware adapter, deployment profiles, reproducible tooling, CI, and release policy. | Shared contract tests run against PX4 and ArduPilot configurations; installed distributions, lifecycle behavior, and deployment limits are verified. |
 
-## Next stage: define contracts before protocol code
+## Next stage: safety and authority
 
-Identify the smallest state fields, capabilities, and action types needed by the
-first mission. Specify units, coordinate frames, freshness, missing-data
-semantics, request expiration, and error results before choosing implementation
-names or function signatures.
-
-Introduce appropriately typed dataclasses and protocols in their owning
-packages. Add configuration validation and a fake adapter to verify the
-contracts. Inject a clock where timing matters. Keep this stage independent of
-MAVLink, an SDK, a simulator process, and physical hardware.
-
-Decide the command-authority model before adding repeated control outputs. A
-future adapter must report its supported capabilities rather than implying all
-vehicles can satisfy every generic request.
+Define production authority grants, operator takeover, cancellation and stale
+command rejection before active output. Validate firmware-specific behavior in
+simulator contract scenarios. Complete the opt-in Stage 2 live SITL smoke in
+[px4-sitl.md](px4-sitl.md) before claiming simulator acceptance.
