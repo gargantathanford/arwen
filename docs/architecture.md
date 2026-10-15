@@ -1,10 +1,11 @@
 # Architecture
 
-Status: Stage 1 contracts and Stage 2 passive PX4 UDP monitoring implemented.
-Communication owns explicit transport lifecycle, MAVLink decoding and PX4
-normalization; applications owns the synchronous terminal monitor. No production
-command path or safety/authority mechanism is implemented. See ADR 0003 for
-clock uncertainty and estimator-session limitations.
+Status: Stage 1 contracts, Stage 2 passive PX4 monitoring, and Stage 3 local
+safety/authority policy are implemented. Communication owns telemetry lifecycle
+and normalization; safety evaluates explicit evidence; control owns leases,
+pending requests and cancellation; applications owns composition. There is no
+active dispatch path. Live firmware-specific takeover/failsafe acceptance remains
+pending. See ADRs 0003–0004 for timing, frame and authority limitations.
 
 ## Control-system separation
 

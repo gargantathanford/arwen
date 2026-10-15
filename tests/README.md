@@ -29,3 +29,10 @@ to run wire tests; with core tooling alone the two optional wire tests skip.
 No default test uses aircraft, simulators, public networks or timing sleeps.
 Installed-wheel checks verify imports without pymavlink and the diagnostic for a
 missing extra. Live SITL is opt-in and has not been run; see docs/px4-sitl.md.
+
+Stage 3 tests (`test_authority.py`) cover explicit leases, forged/pre-grant
+requests, owner transfer, takeover/failsafe/disconnect revocation, cancellation,
+source/frame changes, exact expiry/freshness boundaries, delayed recovery, clock
+errors, bounded replay history and the synthetic application. They exercise local
+policy without flight commands. Live firmware authority/failsafe acceptance has
+not been run; see docs/safety-authority.md.

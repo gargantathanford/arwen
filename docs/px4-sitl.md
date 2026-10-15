@@ -147,7 +147,8 @@ No conversion to an unrelated origin or claim of navigational validity is made.
    be rebound. Confirm QGroundControl remains independent.
 
 These observations must be recorded before claiming live PX4 integration works.
-The next stage is safety and authority before any active control.
+Stage 3 local policy is documented in [safety-authority.md](safety-authority.md).
+Live takeover/failsafe acceptance remains required before Stage 4 active control.
 
 ## Primary references consulted
 

@@ -79,7 +79,7 @@ python -m mypy
 python -m build
 ```
 
-Run `python -m pytest` for the Stage 1 behavior tests. A zero-test run is not
+Run `python -m pytest` for the Stage 1–3 behavior tests. A zero-test run is not
 evidence that behavior has been tested.
 See [tests/README.md](tests/README.md) for future testing categories.
 

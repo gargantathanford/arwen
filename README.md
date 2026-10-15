@@ -5,11 +5,11 @@ mission behavior, perception, control requests, and safety policy to different
 flight controllers and vehicle configurations. PX4 and ArduPilot are initial
 integration targets; neither defines the core application model.
 
-Stages 1 and 2 now provide typed firmware-neutral contracts and a passive PX4
-UDP telemetry adapter. The terminal monitor observes heartbeat health and local
+Stages 1–3 provide typed firmware-neutral contracts, a passive PX4 UDP telemetry
+adapter, and local safety/authority policy. The terminal monitor observes heartbeat health and local
 NED position with explicit timing quality. Every vehicle request is rejected as
-unsupported. There is no active flight logic, mission execution or command
-authority implementation. This is not a flight-ready system.
+unsupported. Local authority grants, takeover revocation and cancellation are implemented;
+there is no active flight-command path or mission execution. This is not a flight-ready system.
 
 ## System responsibilities
 
@@ -105,8 +105,17 @@ install or import this scaffold.
 - [Development roadmap](docs/development-roadmap.md)
 - [Test strategy](tests/README.md)
 
-The next stage is **safety and authority before active control**. Live PX4 SITL
-has not been exercised in this cloud environment.
+Stage 3 local safety/authority behavior is implemented. See the
+[safety and authority guide](docs/safety-authority.md) and
+[ADR 0004](docs/decisions/0004-authority-and-cancellation.md).
+Live PX4 SITL and firmware-specific takeover/failsafe acceptance remain pending.
+Stage 4 active control must wait for those checks.
+
+Run the synthetic local scenario with:
+
+```bash
+python -m arwen.applications.authority_demo
+```
 
 ## Passive PX4 monitor
 

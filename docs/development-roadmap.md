@@ -1,8 +1,9 @@
 # Development stages
 
-Stages 0 and 1 plus the Stage 2 passive PX4 implementation are present. Stage 2
-has deterministic and local wire/UDP validation; live simulator acceptance is
-still pending. Later stages describe proposed work and acceptance criteria.
+Stages 0–2 and the Stage 3 local safety/authority layer are implemented.
+Deterministic policy and local wire/UDP checks pass; Stage 2 live SITL and Stage 3
+firmware-specific takeover/failsafe acceptance remain pending. No active flight
+commands are enabled.
 
 | Stage | Scope | Completion evidence |
 | --- | --- | --- |
@@ -14,9 +15,13 @@ still pending. Later stages describe proposed work and acceptance criteria.
 | 5: Perception and missions | Concrete observations and mission policies using the existing contracts. | Deterministic mission scenarios use recorded or synthetic observations; policies do not import firmware-specific code. |
 | 6: Platform hardening | A second firmware adapter, deployment profiles, reproducible tooling, CI, and release policy. | Shared contract tests run against PX4 and ArduPilot configurations; installed distributions, lifecycle behavior, and deployment limits are verified. |
 
-## Next stage: safety and authority
+## Before Stage 4: live acceptance
 
-Define production authority grants, operator takeover, cancellation and stale
-command rejection before active output. Validate firmware-specific behavior in
-simulator contract scenarios. Complete the opt-in Stage 2 live SITL smoke in
-[px4-sitl.md](px4-sitl.md) before claiming simulator acceptance.
+Stage 3 now implements explicit expiring grants, revocation, operator/failsafe
+handling, pending-request cancellation and replay/freshness rejection. See
+[safety-authority.md](safety-authority.md) for the behavior and limitations.
+
+Complete the Stage 2 live SITL smoke in [px4-sitl.md](px4-sitl.md), establish
+PX4-specific authority observations and validate takeover/native failsafes before
+active control. Stage 4 must define final dispatch checks, cancellation of
+in-flight/repeated work, acknowledgements and observed completion.
