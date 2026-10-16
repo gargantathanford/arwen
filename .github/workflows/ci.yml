@@ -1,0 +1,66 @@
+name: Development and distribution checks
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: ${{ matrix.os }} / Python ${{ matrix.python }} / ${{ matrix.profile }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        python: ['3.12', '3.13']
+        profile: [core, mavlink]
+        include:
+          - os: macos-latest
+            python: '3.12'
+            profile: core
+          - os: macos-latest
+            python: '3.12'
+            profile: mavlink
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install pinned dependency manager
+        run: python -m pip install uv==0.12.23
+      - name: Install locked core profile
+        if: matrix.profile == 'core'
+        run: uv sync --locked --extra dev --group build --python "${{ matrix.python }}"
+      - name: Install locked MAVLink profile
+        if: matrix.profile == 'mavlink'
+        run: uv sync --locked --extra dev --extra mavlink --group build --python "${{ matrix.python }}"
+      - name: Verify core dependency isolation
+        if: matrix.profile == 'core'
+        run: .venv/bin/python -c "import importlib.util; assert importlib.util.find_spec('pymavlink') is None"
+      - name: Verify required wire dependency
+        if: matrix.profile == 'mavlink'
+        run: .venv/bin/python -c "from pymavlink.dialects.v20 import common"
+      - name: Lint, format and type checks
+        run: |
+          .venv/bin/python -m ruff check .
+          .venv/bin/python -m ruff format --check .
+          .venv/bin/python -m mypy
+          .venv/bin/python -m mypy --strict tools
+          .venv/bin/python tools/check_imports.py
+      - name: Behavior tests
+        run: .venv/bin/python -m pytest
+      - name: Build with locked build dependencies
+        run: .venv/bin/python -m build --no-isolation
+      - name: Verify installed wheel and sdist round trip
+        run: .venv/bin/python tools/check_distribution.py dist

@@ -1,7 +1,9 @@
 # Architecture
 
 Status: Stages 1–3, the Stage 4 local execution core and the first Stage 5
-observed-target mission are implemented. Perception owns normalized observations;
+observed-target mission are implemented. Stage 6 adds locked tooling, static
+boundary validation, CI and distribution checks; live/second-adapter acceptance
+remains pending. Perception owns normalized observations;
 missions emits intent; applications translates it into requests routed through
 safety, authority and execution. Control does not import missions or perception.
 There is no live PX4 command dispatch path. Firmware-specific takeover/failsafe

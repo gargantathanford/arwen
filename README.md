@@ -7,8 +7,7 @@ integration targets; neither defines the core application model.
 
 Stages 1–3, the Stage 4 execution core and the first Stage 5 mission slice provide typed firmware-neutral contracts, a passive PX4 UDP telemetry
 adapter, and local safety/authority policy. The terminal monitor observes heartbeat health and local
-NED position with explicit timing quality. Every vehicle request is rejected as
-unsupported. Local authority grants, takeover revocation and cancellation are implemented;
+NED position with explicit timing quality. The live PX4 adapter rejects every vehicle request as unsupported. Local authority grants, takeover revocation and cancellation are implemented;
 the observed-target mission executes against a scripted backend. There is no
 live flight-command path. This is not a flight-ready system.
 
@@ -44,13 +43,12 @@ The import package is `arwen`; its distribution name is `arwen-autonomy`.
 | `src/arwen/logging/` | Diagnostic and event-recording policy, without configuring logging on import. |
 | `src/arwen/config/` | Explicit configuration models, loading, and validation. |
 | `src/arwen/applications/` | Runtime composition, dependency injection, and deployment-specific entry points. |
-| `tests/` | Future behavior, contract, and integration tests. |
+| `tests/` | Behavior, contract, local wire/UDP, scenario and architecture tests. |
 | `docs/` | Architecture, decision records, and development stages. |
 
 Contracts are defined in `arwen.vehicle.contracts` and timing configuration in
 `arwen.config.models`. Package initializers remain free of eager imports. A
-`py.typed` marker identifies the package as providing inline typing. Data models
-and interfaces will be added when their first concrete contracts are defined.
+`py.typed` marker identifies the package as providing inline typing. Additional data models and interfaces are added only for concrete consumers.
 
 ## Design philosophy
 
@@ -70,13 +68,16 @@ and interfaces will be added when their first concrete contracts are defined.
 
 ## Development setup
 
-Use Python 3.12 or newer. From the repository root in a POSIX shell:
+Use Python 3.12 or 3.13 with uv 0.12.23. From the repository root:
 
 ```bash
-python3.12 -m venv .venv
+uv sync --locked --extra dev --group build --python 3.12
 source .venv/bin/activate
-python -m pip install -e '.[dev]'
 ```
+
+Add `--extra mavlink` for the full wire/UDP test profile. See the
+[Stage 6 hardening guide](docs/platform-hardening.md) for bootstrap commands,
+profile selection, lock refresh, CI scope and release limitations.
 
 The `src/` layout requires installation for normal imports. Do not patch
 `sys.path` or set `PYTHONPATH=src` to bypass the package configuration.
@@ -85,10 +86,12 @@ The `src/` layout requires installation for normal imports. Do not patch
 python -m ruff check .
 python -m ruff format --check .
 python -m mypy
-python -m build
+python tools/check_imports.py
+python -m build --no-isolation
+python tools/check_distribution.py dist
 ```
 
-Run the deterministic Stage 1 behavior and fake-adapter tests:
+Run the deterministic behavior and architecture tests:
 
 ```bash
 python -m pytest
@@ -140,7 +143,7 @@ See [ADR 0006](docs/decisions/0006-observed-target-mission.md).
 ## Passive PX4 monitor
 
 ```bash
-python -m pip install -e '.[mavlink]'
+uv sync --locked --extra dev --extra mavlink --group build
 python -m arwen.applications.telemetry --bind-host 127.0.0.1 --bind-port 14540 \
   --system-id 1 --component-id 1
 ```

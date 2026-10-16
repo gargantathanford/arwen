@@ -41,3 +41,12 @@ implement sensor inference, obstacle avoidance or live aircraft missions.
 Stage 6 is platform hardening: reproducible tooling, CI, deployment/release policy
 and eventual second-adapter contract validation. Live Stage 2–4 acceptance remains
 pending and must be completed before active PX4 use.
+
+## Stage 6 implemented hardening slice
+
+`uv.lock`, pinned build tooling, core/MAVLink development profiles, static package
+boundary checks, a Linux/macOS CI matrix and wheel/sdist verification are implemented.
+See [platform-hardening.md](platform-hardening.md). Local Linux validation does
+not establish hosted CI or macOS results. Live PX4 acceptance, a real second
+adapter, deployment validation and owner-approved license/release metadata remain
+outstanding; this is not full Stage 6 completion.

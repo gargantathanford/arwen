@@ -76,10 +76,13 @@ From an installed development environment, run:
 python -m ruff check .
 python -m ruff format --check .
 python -m mypy
-python -m build
+python -m mypy --strict tools
+python tools/check_imports.py
+python -m build --no-isolation
+python tools/check_distribution.py dist
 ```
 
-Run `python -m pytest` for the Stage 1–5 behavior tests. A zero-test run is not
+Run `python -m pytest` for behavior and architecture tests. A zero-test run is not
 evidence that behavior has been tested.
 See [tests/README.md](tests/README.md) for future testing categories.
 
@@ -95,7 +98,10 @@ flight-ready based only on unit tests. Record the simulator, firmware version,
 vehicle configuration, and controlled validation conditions for later integration
 work.
 
-Development dependency ranges are compatibility bounds, not a reproducible
-environment lock. Establish a tested toolchain lock and CI matrix before release.
-Choose a license and release metadata before external distribution; this scaffold
-does not assign a license or claim a package-registry name.
+Use the committed `uv.lock` and pinned uv 0.12.23 for development. Run
+`uv sync --locked --extra dev --group build`, adding `--extra mavlink` for wire
+checks. Build-backend pins and the lock are refreshed deliberately, never during
+normal testing. See [platform-hardening.md](docs/platform-hardening.md) for the
+matrix, distribution checks, dependency updates and outstanding release items.
+Choose a license and approve release metadata before external distribution; this
+repository does not assign a license or claim a package-registry name.

@@ -48,3 +48,9 @@ confidence/uncertainty and exact freshness limits, duplicate/reordered/conflicti
 data, frame/session changes, frozen targets, intent admission deadlines, sensor
 loss and takeover, and the synthetic observation-to-execution application. Tests
 use no camera, model, public network or hardware. See docs/perception-missions.md.
+
+Stage 6 validation uses locked core/MAVLink profiles and static import-boundary
+checks. `test_import_boundaries.py` verifies prohibited edges fail. Run
+`python tools/check_distribution.py dist` after a locked `--no-isolation` build
+to validate the wheel and an sdist-rebuilt wheel in offline clean environments.
+See docs/platform-hardening.md for the CI matrix and exact commands.
