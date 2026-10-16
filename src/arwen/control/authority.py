@@ -198,6 +198,11 @@ class AuthorityController:
         self._grant = grant
         return grant
 
+    def current_grant(self) -> AuthorityGrant | None:
+        """Return the currently valid lease after enforcing freshness and expiry."""
+        self._check(self._now())
+        return self._grant
+
     def revoke(self) -> tuple[RequestDecision, ...]:
         return self._invalidate(ControlReason.REVOKED, self._now())
 

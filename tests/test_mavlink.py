@@ -58,6 +58,8 @@ def test_local_udp() -> None:
         encoder = mav.MAVLink(None, srcSystem=1, srcComponent=1)
         try:
             transport.open()
+            for _ in range(10):
+                sender.sendto(b"unrecognized frame", ("127.0.0.1", port))
             sender.sendto(
                 mav.MAVLink_heartbeat_message(2, 12, 0, 0, 3, 3).pack(encoder),
                 ("127.0.0.1", port),

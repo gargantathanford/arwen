@@ -107,7 +107,7 @@ Configured matrix:
 | Ubuntu latest | 3.12 and 3.13 | Core and MAVLink |
 | macOS latest | 3.12 | Core and MAVLink |
 
-Core runs intentionally skip the two optional real-wire tests. MAVLink runs must
+Core runs intentionally skip the optional real-wire tests. MAVLink runs must
 import the required dialect before testing, so a missing extra cannot quietly
 turn those tests into skips. Each job runs policy, lint, formatting, type,
 package-boundary, build and distribution-roundtrip checks.

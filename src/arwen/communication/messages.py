@@ -4,14 +4,18 @@ from dataclasses import dataclass
 from typing import Protocol
 
 
+class WirePayload:
+    """Marker for communication-owned decoded wire records."""
+
+
 @dataclass(frozen=True, slots=True)
-class Heartbeat:
+class Heartbeat(WirePayload):
     autopilot: int
     vehicle_type: int
 
 
 @dataclass(frozen=True, slots=True)
-class Position:
+class Position(WirePayload):
     boot_ms: int
     north: float
     east: float
@@ -19,7 +23,7 @@ class Position:
 
 
 @dataclass(frozen=True, slots=True)
-class Timesync:
+class Timesync(WirePayload):
     remote_ns: int
     echo_ns: int
 
@@ -29,7 +33,7 @@ class Packet:
     system: int
     component: int
     peer: tuple[str, int]
-    payload: Heartbeat | Position | Timesync
+    payload: WirePayload
 
 
 class Transport(Protocol):

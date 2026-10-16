@@ -6,7 +6,10 @@ boundary validation, CI and distribution checks; live/second-adapter acceptance
 remains pending. Perception owns normalized observations;
 missions emits intent; applications translates it into requests routed through
 safety, authority and execution. Control does not import missions or perception.
-There is no live PX4 command dispatch path. Firmware-specific takeover/failsafe
+A separate opt-in PX4/SIH scenario owns real command transactions and streamed
+setpoints; it does not manufacture acknowledgements for unacknowledged messages.
+The passive adapter and generic execution contracts retain their behavior. See
+ADR 0008 and the current SITL runbook. Firmware-specific takeover/failsafe
 and live simulator acceptance remain pending. See ADRs 0003–0006 for limitations.
 
 ## Control-system separation

@@ -1,165 +1,224 @@
-# Passive PX4 SITL telemetry
+# PX4 SITL end-to-end runbook
 
-## Status and versions
+Supported flight target: **PX4 v1.16.0**, commit
+`6ea3539157ca358c70a515878b77077af7d4611d`, **built-in SIH quadrotor X**, airframe
+10040, default unaccelerated simulation. This is a local simulation profile only.
+The normal telemetry monitor remains read-only; no aircraft acceptance is claimed.
 
-Target: PX4 **v1.16.0**, Gazebo Harmonic, Ubuntu 22.04/24.04, real-time
-simulation (`PX4_SIM_SPEED_FACTOR=1`). Development validation used Python
-3.12.14, pymavlink 2.4.50 on Debian 13. PX4/Gazebo and QGroundControl are not
-installed on this cloud machine. **Live SITL, QGroundControl concurrency and Mac
-VM networking were not run.** The firmware commands below were checked against
-PX4's official documentation and v1.16.0 startup, setup and message-stream source;
-they have not been executed here. Fake and real-byte tests do not prove live
-integration or flight readiness.
+## Install and build
 
-Validation completed: 53 tests passed with the MAVLink extra; the same installed
-wheel outside the checkout passed 51 tests with 2 optional wire tests skipped
-without pymavlink. Ruff lint/format, strict source mypy, dependency checks and
-sdist/wheel builds passed. A terminal-monitor run against an encoded local UDP
-fixture verified position/freshness output, heartbeat loss, exit status and
-socket cleanup. This fixture was not PX4 SITL. Tool versions: pytest 9.1.1,
-Ruff 0.17.0, mypy 2.4.0 and build 1.6.1.
-
-## Install outside the ARWEN checkout
-
-On an Ubuntu 22.04/24.04 simulation machine:
+Keep PX4 outside the ARWEN checkout. The build was exercised in Ubuntu 22.04
+(Docker); its resulting native binary was run on this Debian Linux host. On an
+Ubuntu 22.04 build host:
 
 ```bash
-mkdir -p "$HOME/simulators"
-cd "$HOME/simulators"
-git clone --branch v1.16.0 --recursive https://github.com/PX4/PX4-Autopilot.git
+sudo apt-get update
+sudo apt-get install -y build-essential cmake ninja-build git python3-pip python3-dev \
+  ca-certificates libxml2-utils zip unzip bc
+mkdir -p /tmp/arwen-simulators
+cd /tmp/arwen-simulators
+git clone --depth 1 --branch v1.16.0 --recursive --shallow-submodules \
+  https://github.com/PX4/PX4-Autopilot.git
 cd PX4-Autopilot
-bash Tools/setup/ubuntu.sh --no-nuttx
-# Reboot if the setup script requests it, then return to this directory.
-HEADLESS=1 PX4_SIM_SPEED_FACTOR=1 make px4_sitl gz_x500
+# The pinned version-header generator expects a NuttX version tag even for SITL.
+git -C platforms/nuttx/NuttX/nuttx fetch --depth 1 origin tag nuttx-10.3.0
+python3 -m pip install --user -r Tools/setup/requirements.txt
+make px4_sitl_default -j4
 ```
 
-Use the documented host setup; do not run Ubuntu apt setup on Debian or macOS.
-The first build downloads models and builds firmware. No ARWEN installation
-belongs inside the PX4 checkout. The setup script installs Gazebo Harmonic on
-supported Ubuntu versions. For a graphical simulator omit `HEADLESS=1`.
+For an isolated Ubuntu container use the same packages/commands and a source bind
+mount; run the built binary only where its Linux libraries are compatible. Build
+outputs must be readable by the runtime user. Behind a TLS proxy, install its
+trusted CA using the platform's supported trust configuration; never disable TLS,
+Git verification or expected checksums. No Gazebo, ROS, PX4 source patch or GCS
+installation is required for SIH. Ubuntu host commands require normal local admin
+access; do not run Ubuntu package setup on macOS or Debian as if it were Ubuntu.
 
-In another terminal, from ARWEN's checkout:
+From ARWEN, with Python 3.12 and uv 0.12.23 available:
 
 ```bash
-python3.12 -m venv .venv
+uv sync --locked --extra dev --extra mavlink --group build
 source .venv/bin/activate
-python -m pip install -e '.[dev,mavlink]'
-python -m arwen.applications.telemetry --bind-host 127.0.0.1 --bind-port 14540 \
-  --system-id 1 --component-id 1 --poll 0.1 --display-interval 0.5 \
-  --connection-timeout 10 --heartbeat-timeout 3 --max-state-age 1
 ```
 
-`.[mavlink]` is sufficient without development tools. `--help` lists monitor
-settings. Invalid endpoint/timing configuration fails before opening a socket.
-Missing pymavlink reports the extra to install. Ctrl-C closes the socket and
-returns success; startup or heartbeat loss reports a reason and returns code 1.
-The Python API supports explicit `open()` after loss; the terminal application
-exits so restart its command to reconnect. No automatic retry loop exists.
+## Preferred repeatable acceptance command
 
-## UDP and concurrent QGroundControl
+Stop any other PX4 instance 0 or API client first. The following **explicit operator
+action authorizes simulated arming/flight**. The harness starts a fresh simulator
+for each case, sets only the documented simulation parameters, records real UDP
+traffic and stops its own processes when done:
 
-An ARWEN bind address is a **local listening interface**, not PX4's destination.
-`127.0.0.1:14540` accepts same-machine traffic. `0.0.0.0:14540` listens on every
-IPv4 interface. PX4's default single-instance API link sends to remote **14540**
-from local **14580**. ARWEN sends only TIMESYNC requests back to the selected
-heartbeat's UDP peer. QGroundControl normally listens on **14550** and uses a
-separate PX4 GCS link (local **18570**). Run QGroundControl independently using
-its [official installation guide](https://docs.qgroundcontrol.com/master/en/qgc-user-guide/getting_started/download_and_install.html).
-Do not bind QGroundControl and ARWEN to the same port or share an API socket with
-another application. No QGroundControl installation/version was validated here.
-
-If default telemetry is absent, inspect `mavlink status` in the **PX4 simulator
-shell**. To explicitly enable the position stream on the default API link:
-
-```text
-mavlink stream -u 14580 -s LOCAL_POSITION_NED -r 10
+```bash
+python tools/run_sitl_acceptance.py \
+  --px4-build /tmp/arwen-simulators/PX4-Autopilot/build/px4_sitl_default \
+  --authorize-sitl-flight --case all
 ```
 
-This is simulator-side stream configuration, not an ARWEN transmission.
-No parameter writes, vehicle command messages or flight operations are needed.
-Source IDs must match the expected aircraft; changing the UDP port does not
-change system identity. Additional PX4 instances use API ports 14541, 14542, etc.
+Use `--case nominal`, `takeover`, `link-loss` or `mode-rejection` for one case.
+`--output artifacts/px4-sitl/my-run` selects a new evidence directory. Existing
+files/directories are not overwritten. The harness never manufactures vehicle
+positions, acknowledgements or landed state. Default unit tests never launch it.
 
-## Mac client with Linux VM simulator
+## Start the simulator and scenario separately
 
-Install Python 3.12 and ARWEN with the same virtual-environment commands on the
-Mac. Prefer bridged or host-only VM networking with reachable Mac and VM IPv4
-addresses. Bind ARWEN to the Mac's receiving address (or `0.0.0.0`), **not** the
-VM's address. Permit incoming UDP 14540 in the Mac firewall and return UDP to the
-VM's PX4 sender port. NAT often requires explicit port forwarding and a host
-reachable destination; a VM's loopback address never refers to the Mac.
+In one terminal (replace paths with your actual checkout/build):
 
-To preserve local API/GCS links, add separate simulator-side links. Replace
-`192.168.1.20` with the reachable Mac IPv4 address, in the PX4 shell:
-
-```text
-mavlink start -u 14581 -o 14540 -t 192.168.1.20 -m onboard -r 100000
-mavlink stream -u 14581 -s LOCAL_POSITION_NED -r 10
-mavlink start -u 18571 -o 14550 -t 192.168.1.20 -m normal -r 100000
+```bash
+mkdir -p /tmp/arwen-sih-rootfs
+unset PX4_SIM_SPEED_FACTOR
+PX4_SYS_AUTOSTART=10040 PX4_SIM_MODEL=sihsim_quadx \
+PX4_PARAM_EKF2_MAG_TYPE=6 PX4_PARAM_COM_RC_IN_MODE=4 \
+PX4_PARAM_COM_OF_LOSS_T=0.5 PX4_PARAM_COM_OBL_RC_ACT=4 \
+PX4_PARAM_COM_DISARM_LAND=1 \
+/tmp/arwen-simulators/PX4-Autopilot/build/px4_sitl_default/bin/px4 \
+  /tmp/arwen-simulators/PX4-Autopilot/build/px4_sitl_default/etc \
+  -w /tmp/arwen-sih-rootfs -s /absolute/path/to/arwen/tools/px4_sitl_startup.sh
 ```
 
-Use free local ports if these are occupied. The first link is ARWEN telemetry;
-the second is optional QGroundControl on the Mac. PX4 sends to the specified Mac
-remote ports; ARWEN replies to 14581 for TIMESYNC. Avoid broadcast assumptions,
-check `mavlink status`, and verify routing/firewalls before changing application
-IDs or timing thresholds. MAVLink IDs and UDP peer pinning do not authenticate
-senders; use a trusted simulation network.
+Do not set `PX4_SIM_SPEED_FACTOR=1`: this PX4 startup script scales and overwrites
+Offboard-loss timeout when that variable is present. Unset means SIH's default
+1x speed while preserving the explicitly configured 0.5 s loss timeout.
 
-## Timing and frame interpretation
+In another terminal:
 
-The monitor distinguishes heartbeat health, clock quality, position availability
-and freshness. A healthy heartbeat alone cannot establish fresh position. It
-shows `position=None` until a correlated TIMESYNC reply with acceptable RTT and a
-valid position sample arrive. TIMESYNC-only housekeeping is sent at most once per
-configured interval from system 255/component 191. There are no heartbeat,
-command, stream-request, parameter or setpoint transmissions from ARWEN.
+```bash
+# Validates real telemetry and read-back parameters; does not arm or request modes.
+python -m arwen.applications.px4_sitl
 
-PX4 v1.16.0 replies with `hrt_absolute_time()` in nanoseconds; position
-`time_boot_ms` is the local-position publication timestamp in milliseconds.
-Alignment uses a conservative lower bound, a quantization allowance and a 100 ppm
-relative drift assumption. It is not precise sensor acquisition timing or a
-hard guarantee under arbitrary clock behavior. Alignment expires after 5 seconds
-by default; RTT above 0.1 seconds is rejected. Accelerated simulation and remote
-clocks outside the drift bound require a different policy and are unsupported.
-No raw boot timestamp is exposed as a host timestamp.
+# Explicit operator action for this selected simulation:
+python -m arwen.applications.px4_sitl --authorize-sitl-flight \
+  --height 2 --north 2 --east 0 --radius 5 --ceiling 5 \
+  --xy-tolerance 0.3 --z-tolerance 0.2 --dwell 1
+```
 
-`origin_id` labels the selected PX4 estimator session, not an application-defined
-home. Reconnection and detected clock restart replace this identity and invalidate
-position. Duplicate/reordered samples do not refresh state; 32-bit millisecond
-wrap is handled. A reboot cannot be distinguished from reordered position alone;
-TIMESYNC discontinuity or heartbeat loss is required. LOCAL_POSITION_NED carries
-no estimator-reset counter or validity flags; unseen estimator origin resets and
-finite but invalid estimator values cannot be identified from these messages.
-No conversion to an unrelated origin or claim of navigational validity is made.
+Expected nominal states: PREFLIGHT → PRIMING → SETTING_MODE → ARMING → TAKEOFF →
+MOVING → LANDING → WAIT_LANDED_DISARMED → COMPLETE. Before authorization the
+vehicle must be landed/disarmed, in a supported ground mode, with two seconds of
+stable estimator-session telemetry. The operator flag issues a bounded local
+lease; no connection or armed bit implicitly grants authority.
 
-## Opt-in live smoke procedure (not run here)
+## Endpoints and required parameters
 
-1. Start the pinned SITL, QGroundControl if desired, and the monitor above.
-   Expect `healthy`, `bounded`, finite NED position and eventually `fresh=True`.
-   A stationary valid `(0,0,0)` position is preserved.
-2. Save the firmware version, airframe, source IDs and displayed estimator origin.
-3. Stop SITL with Ctrl-C. Position age becomes stale if displayed before timeout;
-   by the heartbeat timeout the adapter reports loss, invalidates its cache,
-   closes its socket and the terminal monitor exits with code 1.
-4. Restart SITL and rerun the monitor explicitly. Confirm healthy telemetry,
-   a new estimator-session origin and no restored position from the old session.
-5. Stop the monitor with Ctrl-C. Confirm it exits cleanly and the UDP port can
-   be rebound. Confirm QGroundControl remains independent.
+ARWEN binds local `127.0.0.1:14540`; PX4's API sender is `127.0.0.1:14580`.
+`--bind-port`, `--system-id` and `--component-id` are configurable. This active
+profile restricts bind addresses to loopback and expects one local API controller.
+A vehicle lock also prevents competing local ARWEN flight processes, even on
+alternate ports. This is not network authentication or protection against an
+unrelated MAVLink sender. Do not run a second Offboard application.
 
-These observations must be recorded before claiming live PX4 integration works.
-Stage 3 local policy is documented in [safety-authority.md](safety-authority.md).
-Live takeover/failsafe acceptance remains required before Stage 4 active control.
+The harness uses a transparent fault proxy on 14540 and ARWEN on 14541; PX4 remains
+on 14580. QGroundControl may independently use its usual 14550 GCS destination
+(PX4 source 18570). Do not bind it to the API port. Remote/Mac/VM **active flight**
+is outside this validated profile; the passive monitor can still be configured
+separately. QGroundControl and physical RC takeover were not manually validated.
 
-## Primary references consulted
+| Parameter | Required | Purpose |
+| --- | --- | --- |
+| SYS_AUTOSTART | 10040 | SIH quadrotor target, checked along with firmware version/capabilities. |
+| EKF2_MAG_TYPE | 6 | Initialize heading from magnetometer; avoid the in-flight heading realignment of continuous mag fusion in this small simulation. Not a general aircraft recommendation. |
+| COM_RC_IN_MODE | 4 | Ignore absent simulated stick input. Takeover tests use an explicit Hold-mode command, not RC sticks. |
+| COM_OF_LOSS_T | 0.5 | Delay after PX4 detects loss of Offboard proof-of-life before its configured action. The internal detection window is additional. |
+| COM_OBL_RC_ACT | 4 | PX4 selects Land after Offboard loss. |
+| COM_DISARM_LAND | 1 | PX4 automatically disarms after landing; ARWEN does not force disarm. |
 
-- [MAVLink common messages](https://mavlink.io/en/messages/common.html)
-- [Heartbeat](https://mavlink.io/en/services/heartbeat.html)
-- [TIMESYNC](https://mavlink.io/en/services/timesync.html)
-- [PX4 simulation](https://docs.px4.io/main/en/simulation/)
-- [PX4 v1.16.0 API/GCS startup](https://github.com/PX4/PX4-Autopilot/blob/v1.16.0/ROMFS/px4fmu_common/init.d-posix/px4-rc.mavlink)
-- [PX4 v1.16.0 TIMESYNC](https://github.com/PX4/PX4-Autopilot/blob/v1.16.0/src/modules/mavlink/mavlink_timesync.cpp)
-- [PX4 v1.16.0 local position stream](https://github.com/PX4/PX4-Autopilot/blob/v1.16.0/src/modules/mavlink/streams/LOCAL_POSITION_NED.hpp)
+ARWEN reads these parameters; it sends no parameter writes. The simulator launch
+sets them explicitly. The startup helper requests HEARTBEAT/EXTENDED_SYS_STATE at
+5 Hz, LOCAL_POSITION_NED/ODOMETRY at 20 Hz and ESTIMATOR_STATUS at 10 Hz. Missing,
+stale or invalid telemetry prevents flight, rather than being treated as zero.
 
-The documentation web hosts were proxy-blocked during development. Their official
-GitHub sources (`mavlink/mavlink`, `mavlink/mavlink-devguide`, `PX4/PX4-user_guide`)
-and the pinned firmware sources above were read instead.
+## Protocol and interruption behavior
+
+Commands 176 (Offboard), 400 (normal arm) and 21 (land at current position) have
+bounded, serialized real COMMAND_ACK transactions. Confirmation additionally uses
+new HEARTBEAT mode/armed observations. No automatic command retry or forced arming
+exists. Version request 512 is read-only. The negative case requests unsupported
+custom mode 255: selected PX4 may ACK it ACCEPTED without changing mode. The
+observed-mode deadline must still fail before arming; ACK alone is never success.
+
+Position-based takeoff and movement use 20 Hz SET_POSITION_TARGET_LOCAL_NED in
+LOCAL_NED with mask 3576 (position only, yaw ignored). They have **no COMMAND_ACK**.
+Height is relative to the initial local estimator position; it is not MSL altitude.
+Fresh, distinct measurements must remain within XY/Z tolerances for the dwell
+interval. Streams use a boot-aligned timestamp; selected PX4 stamps reception
+internally. A conservative causal TIMESYNC policy handles SIH's slower/paused boot
+clock; accelerated simulation is unsupported. Estimator resets before authorization
+replace the frame and restart preflight stability. Any ambiguous reset during
+control revokes authority; resets are not ignored for a nominal pass.
+
+Interruption procedures:
+
+- **B / operator takeover:** during MOVING enter `commander mode auto:loiter` in the PX4
+  shell. ARWEN observes the mode change, revokes its lease and stops setpoints and
+  flight commands. It does not reacquire control. The harness performs this real
+  console action, then explicitly issues operator `land` to clean up the simulation.
+- **C / link loss:** the harness drops both directions of API UDP for three seconds
+  during MOVING. ARWEN aborts on stale data. Its output does not resume after link
+  restoration; a bounded read-only reconnect records PX4's actual Land/landing/
+  disarm response. The proxy continues observing real PX4 wire output while cut.
+- **D / unavailable mode:** run `--mode-rejection-test --authorize-sitl-flight`.
+  No prestream or arming is attempted. Rejection or missing requested-mode
+  observation causes a bounded failure even if COMMAND_ACK said ACCEPTED.
+- **Ctrl-C:** revokes authority and stops local output. It does not prove a physical
+  stop. If still in Offboard, PX4 must execute its configured loss response.
+
+During observed AUTO.LAND, ARWEN stops the Offboard stream and lets PX4 land and
+then auto-disarm. PX4 can restore its earlier Offboard selection after disarm;
+that ground-only transition is accepted only in final confirmation when fresh
+landed and disarmed evidence agrees. It cannot mask an armed mode change.
+Completion requires fresh landed and disarmed observations plus
+a dwell interval. On failure it sends no emergency command that could override an
+operator; it logs up to 20 seconds of observation-only recovery, never rearming.
+
+## Logs, troubleshooting and evidence
+
+Application JSONL files default to `artifacts/px4-sitl/<uuid>.jsonl` (or `--log`).
+The harness stores `events.jsonl`, `wire.jsonl`, `scenario.log`, PX4 stdout and ULog
+under each case directory, plus hashes and `result.json`/`summary.json`. These
+artifacts and runtime rootfs files are ignored by Git. Events include UTC and
+monotonic time, selected identity/frame, mode, armed/landed state, request IDs,
+phase, targets, measured positions, ACKs, revocations and failure reasons.
+
+If preflight fails, read its readiness reason: wrong version/parameters, missing
+streams, estimator readiness, stale clock alignment or a pre-existing armed/mode
+condition are blockers. Do not raise limits, disable checks, edit expected hashes
+or force arm to turn a failed run into a pass. If builds fail after a shallow clone,
+check the pinned NuttX tag above; proxy certificate errors require proper CA trust.
+If another instance owns IPC/API ports, shut down that simulator/controller before
+starting a fresh case. An ACK timeout means delivery is uncertain, not rejection.
+
+Live acceptance ran on **2026-10-16**, on Linux with the unmodified pinned PX4
+build. All four cases passed using real MAVLink output and SIH telemetry. Negative
+cases deliberately exit 1 after ABORTED; the harness exits 0 when that failure and
+the required PX4 response are verified. Earlier failed development attempts remain
+in ignored artifacts and are not counted as passes.
+
+Evidence root: `artifacts/px4-sitl/acceptance-04/`. Each row names its case directory;
+`result.json` records full SHA-256 hashes of `events.jsonl` and `wire.jsonl`.
+
+| Case | Status | Observed evidence |
+| --- | --- | --- |
+| A: nominal flight | PASS | `nominal/`: real Offboard/arm; 2 m takeoff and 2 m northward target; both arrivals held for 1 s; AUTO.LAND followed by landed/disarmed dwell at 05:06:48 UTC. Events SHA-256 starts `7ca8efddc7d9`. |
+| B: operator takeover | PASS | `takeover/`: armed Hold observed during MOVING; authority revoked at 05:07:09 UTC; no subsequent ARWEN commands/setpoints or reacquisition. Explicit operator land performed cleanup. Events hash starts `5c9015545af5`. |
+| C: link interruption/recovery | PASS | `link-loss/`: 3 s bidirectional drop during MOVING; stale-position abort; real PX4 AUTO.LAND and landed/disarmed observed; read-only reconnect without resumption/rearm. Events hash starts `e2590891f04d`. |
+| D: unavailable control mode | PASS | `mode-rejection/`: real ACK ACCEPTED for unsupported mode 255, but mode never observed; bounded observation deadline aborted without arming or streaming. Events hash starts `4e13312f51e3`. |
+
+Separate deterministic validation: Python 3.12 and 3.13 MAVLink profiles each
+passed 225 tests; core-only Python 3.12 passed 222 with three optional wire tests
+skipped. Lint, formatting, strict source/tool typing, import boundaries, lockfile,
+wheel/sdist build and clean-install distribution checks passed. These are unit,
+wire-format and packaging results, not additional live flights. Hosted CI, macOS,
+QGroundControl/RC takeover and aircraft operation were not demonstrated.
+
+## Primary sources checked
+
+- [PX4 v1.16.0 Commander](https://github.com/PX4/PX4-Autopilot/blob/v1.16.0/src/modules/commander/Commander.cpp): mode, arm and land handling.
+- [PX4 receiver](https://github.com/PX4/PX4-Autopilot/blob/v1.16.0/src/modules/mavlink/mavlink_receiver.cpp): local setpoint frame/mask and receipt timestamps.
+- [PX4 commander parameters](https://github.com/PX4/PX4-Autopilot/blob/v1.16.0/src/modules/commander/commander_params.c): loss action, RC mode and auto-disarm.
+- [PX4 estimator magnetometer policy](https://github.com/PX4/PX4-Autopilot/blob/v1.16.0/src/modules/ekf2/params_magnetometer.yaml).
+- [PX4 EKF2](https://github.com/PX4/PX4-Autopilot/blob/v1.16.0/src/modules/ekf2/EKF2.cpp): odometry reset counter semantics.
+- [MAVLink common messages](https://mavlink.io/en/messages/common.html), [command protocol](https://mavlink.io/en/services/command.html), [TIMESYNC](https://mavlink.io/en/services/timesync.html).
+- [PX4 SIH](https://docs.px4.io/main/en/sim_sih/), [Offboard](https://docs.px4.io/main/en/flight_modes/offboard.html).
+
+Official documentation GitHub sources were used where documentation hosts were
+proxy-blocked. The pinned implementation sources take precedence over assumptions
+from current main-branch docs. This runbook does not certify aircraft safety.

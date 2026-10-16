@@ -19,7 +19,7 @@ performs vehicle operations. A configured workflow is not a recorded hosted pass
 
 Both profiles run lint, formatting, strict source/tool typing, static package
 boundary checks and all default tests.
-The core profile intentionally skips the two optional wire/UDP tests; the MAVLink
+The core profile intentionally skips the optional wire/UDP tests; the MAVLink
 profile runs them. Build using locked installed backend dependencies with
 python -m build --no-isolation, then verify a wheel in a clean temporary venv
 outside the checkout. Rebuild the sdist into another wheel and repeat the import,

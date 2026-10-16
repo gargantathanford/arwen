@@ -7,9 +7,10 @@ integration targets; neither defines the core application model.
 
 Stages 1–3, the Stage 4 execution core and the first Stage 5 mission slice provide typed firmware-neutral contracts, a passive PX4 UDP telemetry
 adapter, and local safety/authority policy. The terminal monitor observes heartbeat health and local
-NED position with explicit timing quality. The live PX4 adapter rejects every vehicle request as unsupported. Local authority grants, takeover revocation and cancellation are implemented;
-the observed-target mission executes against a scripted backend. There is no
-live flight-command path. This is not a flight-ready system.
+NED position with explicit timing quality. The passive PX4 monitor rejects every generic vehicle request as unsupported.
+A distinct, explicitly authorized PX4 1.16.0/SIH scenario now implements real
+command transactions and position streaming; see the [SITL runbook](docs/px4-sitl.md). Local authority grants, takeover revocation and cancellation are implemented;
+the observed-target mission executes against a scripted backend. Live output is restricted to that opt-in local SITL profile. This is not a flight-ready system.
 
 ## System responsibilities
 
@@ -112,8 +113,9 @@ install or import this scaffold.
 Stage 3 local safety/authority behavior is implemented. See the
 [safety and authority guide](docs/safety-authority.md) and
 [ADR 0004](docs/decisions/0004-authority-and-cancellation.md).
-Live PX4 SITL and firmware-specific takeover/failsafe acceptance remain pending.
-Live Stage 4 active control must wait for those checks. The firmware-neutral
+The opt-in [end-to-end SITL integration](docs/px4-sitl.md) now exercises real
+telemetry/output; its acceptance table separates actual simulator results from
+synthetic tests. Aircraft and additional firmware acceptance remain outside scope. The firmware-neutral
 execution core and scripted example are implemented; see the
 [execution guide](docs/execution.md) and [ADR 0005](docs/decisions/0005-execution-lifecycle.md).
 

@@ -50,3 +50,13 @@ See [platform-hardening.md](platform-hardening.md). Local Linux validation does
 not establish hosted CI or macOS results. Live PX4 acceptance, a real second
 adapter, deployment validation and owner-approved license/release metadata remain
 outstanding; this is not full Stage 6 completion.
+
+## End-to-end PX4 SITL integration
+
+A distinct, operator-authorized PX4 v1.16.0/SIH quadrotor scenario now implements
+real telemetry validation, Offboard mode confirmation, normal arm, bounded
+position-based takeoff/movement, dwell arrival and observed landing/disarm.
+A real-UDP A–D harness records actual simulator acceptance separately from unit
+tests. See [px4-sitl.md](px4-sitl.md) for the current results and limitations.
+This supersedes earlier descriptions of all active PX4 output as absent; broader
+deployment, aircraft and additional-backend acceptance remain outstanding.

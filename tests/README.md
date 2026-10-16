@@ -54,3 +54,9 @@ checks. `test_import_boundaries.py` verifies prohibited edges fail. Run
 `python tools/check_distribution.py dist` after a locked `--no-isolation` build
 to validate the wheel and an sdist-rebuilt wheel in offline clean environments.
 See docs/platform-hardening.md for the CI matrix and exact commands.
+
+PX4/SIH unit tests (`test_sitl_flight.py`) use fake transport and a real-codec
+wire check; they cannot establish live flight acceptance. The explicit opt-in
+`tools/run_sitl_acceptance.py --authorize-sitl-flight` harness launches real
+PX4 v1.16.0/SIH, records actual UDP and exercises A–D with no synthetic state
+injection. See docs/px4-sitl.md for commands, evidence and current acceptance.
