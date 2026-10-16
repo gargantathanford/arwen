@@ -116,13 +116,21 @@ class ExecutionController:
         )
 
     def start(
-        self, request: PositionRequest, evidence: AuthorityEvidence | None
+        self,
+        request: PositionRequest,
+        evidence: AuthorityEvidence | None,
+        *,
+        admit_before: float | None = None,
     ) -> ExecutionOutcome:
         key = request.request_id
 
         def rejected(detail: str) -> ExecutionOutcome:
             return ExecutionOutcome(key, ExecutionPhase.REJECTED, detail)
 
+        if admit_before is not None and (
+            not isfinite(admit_before) or admit_before < 0
+        ):
+            return rejected("admission deadline must be finite and nonnegative")
         if self._closed or self._fault is not None:
             return rejected(self._fault or "execution controller closed")
         if key in self._history:
@@ -156,6 +164,11 @@ class ExecutionController:
             checked = self._authority.revalidate(request)
             if checked.reason is not ControlReason.AUTHORIZED:
                 result = rejected(self._denial(checked))
+                self._history[key] = result
+                return result
+            if admit_before is not None and self._now() >= admit_before:
+                self._authority.cancel(key)
+                result = rejected("intent admission deadline expired")
                 self._history[key] = result
                 return result
             if state is None:

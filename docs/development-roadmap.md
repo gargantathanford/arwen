@@ -1,6 +1,7 @@
 # Development stages
 
-Stages 0–3 and the Stage 4 local execution core are implemented.
+Stages 0–3, the Stage 4 local execution core and a Stage 5 observed-target
+mission slice are implemented.
 Deterministic policy and local wire/UDP checks pass; Stage 2 live SITL and Stage 3
 firmware-specific takeover/failsafe acceptance remain pending. No active flight
 commands are enabled.
@@ -28,3 +29,15 @@ handling, acknowledgement correlation and observation-based completion against
 a scripted adapter. See [execution.md](execution.md). Live command translation,
 firmware cancellation and simulator acceptance remain pending; active PX4 flight
 commands remain disabled.
+
+## Stage 5 implemented slice and next work
+
+Typed, timestamped target observations now drive a one-shot observed-target mission.
+The application routes its intent through Stage 3 authority and Stage 4 execution
+against a scripted backend. See [perception-missions.md](perception-missions.md)
+for quality/freshness policy, cancellation and synthetic validation. This does not
+implement sensor inference, obstacle avoidance or live aircraft missions.
+
+Stage 6 is platform hardening: reproducible tooling, CI, deployment/release policy
+and eventual second-adapter contract validation. Live Stage 2–4 acceptance remains
+pending and must be completed before active PX4 use.

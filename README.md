@@ -5,11 +5,12 @@ mission behavior, perception, control requests, and safety policy to different
 flight controllers and vehicle configurations. PX4 and ArduPilot are initial
 integration targets; neither defines the core application model.
 
-Stages 1–3 and the Stage 4 execution core provide typed firmware-neutral contracts, a passive PX4 UDP telemetry
+Stages 1–3, the Stage 4 execution core and the first Stage 5 mission slice provide typed firmware-neutral contracts, a passive PX4 UDP telemetry
 adapter, and local safety/authority policy. The terminal monitor observes heartbeat health and local
 NED position with explicit timing quality. Every vehicle request is rejected as
 unsupported. Local authority grants, takeover revocation and cancellation are implemented;
-there is no active flight-command path or mission execution. This is not a flight-ready system.
+the observed-target mission executes against a scripted backend. There is no
+live flight-command path. This is not a flight-ready system.
 
 ## System responsibilities
 
@@ -124,6 +125,17 @@ Run the synthetic local scenario with:
 ```bash
 python -m arwen.applications.authority_demo
 ```
+
+## Perception and mission example
+
+```bash
+python -m arwen.applications.mission_demo
+```
+
+The [Stage 5 guide](docs/perception-missions.md) documents typed target observations,
+mission intent, freshness/quality checks and application routing through authority
+and execution. The runnable scenario is synthetic; no camera or PX4 commands run.
+See [ADR 0006](docs/decisions/0006-observed-target-mission.md).
 
 ## Passive PX4 monitor
 

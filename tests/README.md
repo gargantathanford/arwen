@@ -42,3 +42,9 @@ submission vs acknowledgement vs measured completion, post-submission telemetry,
 ACK correlation, exact deadlines, takeover/loss, cancellation, send/stop failures,
 final admission checks, immutable released requests and resource limits. PX4
 remains passive. No live command translation or simulator acceptance is claimed.
+
+Stage 5 tests (`test_missions.py`) cover observation validation, one-shot policy,
+confidence/uncertainty and exact freshness limits, duplicate/reordered/conflicting
+data, frame/session changes, frozen targets, intent admission deadlines, sensor
+loss and takeover, and the synthetic observation-to-execution application. Tests
+use no camera, model, public network or hardware. See docs/perception-missions.md.
