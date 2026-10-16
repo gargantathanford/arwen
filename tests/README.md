@@ -36,3 +36,9 @@ source/frame changes, exact expiry/freshness boundaries, delayed recovery, clock
 errors, bounded replay history and the synthetic application. They exercise local
 policy without flight commands. Live firmware authority/failsafe acceptance has
 not been run; see docs/safety-authority.md.
+
+Stage 4 tests (`test_execution.py`) exercise the scripted execution boundary:
+submission vs acknowledgement vs measured completion, post-submission telemetry,
+ACK correlation, exact deadlines, takeover/loss, cancellation, send/stop failures,
+final admission checks, immutable released requests and resource limits. PX4
+remains passive. No live command translation or simulator acceptance is claimed.

@@ -63,6 +63,7 @@ class AuthorityController:
         self._evidence: AuthorityEvidence | None = None
         self._grant: AuthorityGrant | None = None
         self._pending: dict[str, PositionRequest] = {}
+        self._released: dict[str, PositionRequest] = {}
         self._decisions: dict[str, RequestDecision] = {}
         self._revoked_at = -1.0
         self._closed = False
@@ -79,6 +80,7 @@ class AuthorityController:
         self, reason: ControlReason, now: float, safety: SafetyReason | None = None
     ) -> tuple[RequestDecision, ...]:
         self._grant = None
+        self._released.clear()
         self._revoked_at = max(self._revoked_at, now)
         decisions = tuple(RequestDecision(key, reason, safety) for key in self._pending)
         self._pending.clear()
@@ -247,7 +249,21 @@ class AuthorityController:
         denied = self._admit(request, now)
         result = denied or RequestDecision(request_id, ControlReason.AUTHORIZED)
         self._decisions[request_id] = result
+        if result.reason is ControlReason.AUTHORIZED:
+            self._released[request_id] = request
         return result
+
+    def revalidate(self, request: PositionRequest) -> RequestDecision:
+        """Recheck an exact released request for execution, never dispatch it."""
+        now = self._now()
+        self._check(now)
+        if self._closed:
+            return RequestDecision(request.request_id, ControlReason.CLOSED)
+        if self._released.get(request.request_id) != request:
+            return RequestDecision(request.request_id, ControlReason.NO_GRANT)
+        return self._admit(request, now) or RequestDecision(
+            request.request_id, ControlReason.AUTHORIZED
+        )
 
     def cancel(self, request_id: str) -> RequestDecision:
         """Cancel pending work; an already released request cannot be recalled."""

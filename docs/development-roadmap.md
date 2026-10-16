@@ -1,6 +1,6 @@
 # Development stages
 
-Stages 0–2 and the Stage 3 local safety/authority layer are implemented.
+Stages 0–3 and the Stage 4 local execution core are implemented.
 Deterministic policy and local wire/UDP checks pass; Stage 2 live SITL and Stage 3
 firmware-specific takeover/failsafe acceptance remain pending. No active flight
 commands are enabled.
@@ -15,7 +15,7 @@ commands are enabled.
 | 5: Perception and missions | Concrete observations and mission policies using the existing contracts. | Deterministic mission scenarios use recorded or synthetic observations; policies do not import firmware-specific code. |
 | 6: Platform hardening | A second firmware adapter, deployment profiles, reproducible tooling, CI, and release policy. | Shared contract tests run against PX4 and ArduPilot configurations; installed distributions, lifecycle behavior, and deployment limits are verified. |
 
-## Before Stage 4: live acceptance
+## Stage 4: execution core implemented, live acceptance pending
 
 Stage 3 now implements explicit expiring grants, revocation, operator/failsafe
 handling, pending-request cancellation and replay/freshness rejection. See
@@ -23,5 +23,8 @@ handling, pending-request cancellation and replay/freshness rejection. See
 
 Complete the Stage 2 live SITL smoke in [px4-sitl.md](px4-sitl.md), establish
 PX4-specific authority observations and validate takeover/native failsafes before
-active control. Stage 4 must define final dispatch checks, cancellation of
-in-flight/repeated work, acknowledgements and observed completion.
+active control. The execution core now performs final local checks, dispatch tracking, stop
+handling, acknowledgement correlation and observation-based completion against
+a scripted adapter. See [execution.md](execution.md). Live command translation,
+firmware cancellation and simulator acceptance remain pending; active PX4 flight
+commands remain disabled.

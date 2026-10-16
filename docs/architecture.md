@@ -1,10 +1,10 @@
 # Architecture
 
 Status: Stage 1 contracts, Stage 2 passive PX4 monitoring, and Stage 3 local
-safety/authority policy are implemented. Communication owns telemetry lifecycle
+safety/authority policy and the Stage 4 local execution core are implemented. Communication owns telemetry lifecycle
 and normalization; safety evaluates explicit evidence; control owns leases,
-pending requests and cancellation; applications owns composition. There is no
-active dispatch path. Live firmware-specific takeover/failsafe acceptance remains
+pending requests and cancellation; applications owns composition. Control also owns single-request dispatch tracking against the optional
+ExecutionAdapter protocol. There is no live PX4 command dispatch path. Live firmware-specific takeover/failsafe acceptance remains
 pending. See ADRs 0003–0004 for timing, frame and authority limitations.
 
 ## Control-system separation

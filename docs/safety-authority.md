@@ -100,8 +100,9 @@ Before live acceptance, define and validate PX4-specific operator/failsafe
 observations and exercise loss, takeover, re-acquisition and session restart in
 the pinned simulator. Do not treat unit tests as proof of firmware behavior.
 
-Stage 4 may add active control only after those acceptance checks. It must define
-an atomic final check at dispatch, cancellation of in-flight/repeated outputs,
-controller acknowledgements and observed outcomes. Native controller failsafes,
+The Stage 4 [execution core](execution.md) now implements final local checks,
+stop handling, acknowledgement correlation and observed outcomes with a scripted
+adapter. Live active control still requires those acceptance checks, scoped
+command translation and firmware-specific cancellation behavior. Native controller failsafes,
 RC/manual intervention and the external GCS remain independent. This local layer
 does not replace them and is not flight-ready.
